@@ -1,0 +1,12 @@
+[package]
+name = "ctext"
+version = "0.1.0"
+authors = ["Riey <creeper844@gmail.com>"]
+edition = "2018"
+license = "MIT"
+
+[dependencies]
+libc = "0.2.81"
+
+[build-dependencies]
+bindgen = "0.56.0"
