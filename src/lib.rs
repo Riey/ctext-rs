@@ -69,7 +69,12 @@ mod ffi {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn korean() {
+        const UTF8: &str = "가나다";
+        const COMP: &[u8] = &[
+            27, 37, 71, 234, 176, 128, 235, 130, 152, 235, 139, 164, 27, 37, 64,
+        ];
+        assert_eq!(crate::utf8_to_compound_text(UTF8).unwrap(), COMP);
+        assert_eq!(crate::compound_text_to_utf8(COMP).unwrap(), UTF8);
     }
 }
