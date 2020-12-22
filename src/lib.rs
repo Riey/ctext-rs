@@ -1,7 +1,49 @@
 //! Currently only support utf8 mode
 
+use std::fmt;
+use std::io::{self, Write};
+
 const UTF8_START: &[u8] = &[0x1B, 0x25, 0x47];
 const UTF8_END: &[u8] = &[0x1B, 0x25, 0x40];
+
+/// Wrapper for reduce allocation
+#[derive(Clone, Copy)]
+#[repr(transparent)]
+pub struct CText<'s> {
+    utf8: &'s str,
+}
+
+impl<'s> fmt::Debug for CText<'s> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.utf8)
+    }
+}
+
+impl<'s> fmt::Display for CText<'s> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.utf8)
+    }
+}
+
+impl<'s> CText<'s> {
+    pub const fn new(utf8: &'s str) -> Self {
+        Self {
+            utf8
+        }
+    }
+
+    pub const fn len(self) -> usize {
+        self.utf8.len() + UTF8_START.len() + UTF8_END.len()
+    }
+
+    pub fn write(self, mut out: impl Write) -> io::Result<usize> {
+        let mut writed = 0;
+        writed += out.write(UTF8_START)?;
+        writed += out.write(self.utf8.as_bytes())?;
+        writed += out.write(UTF8_END)?;
+        Ok(writed)
+    }
+}
 
 pub fn utf8_to_compound_text(text: &str) -> Vec<u8> {
     let mut ret = Vec::with_capacity(text.len() + 6);
