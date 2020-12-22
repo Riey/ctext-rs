@@ -1,69 +1,22 @@
-//! This library is wrapper for xcb-imdkit with dynamic linkage
+//! Currently only support utf8 mode
 
-use std::os::raw::c_char;
-use std::sync::Once;
+const UTF8_START: &[u8] = &[0x1B, 0x25, 0x47];
+const UTF8_END: &[u8] = &[0x1B, 0x25, 0x40];
 
-fn init() {
-    const ONCE: Once = Once::new();
-
-    ONCE.call_once(|| unsafe { crate::ffi::xcb_compound_text_init() });
+pub fn utf8_to_compound_text(text: &str) -> Vec<u8> {
+    let mut ret = Vec::with_capacity(text.len() + 6);
+    ret.extend_from_slice(UTF8_START);
+    ret.extend_from_slice(text.as_bytes());
+    ret.extend_from_slice(UTF8_END);
+    ret
 }
 
-pub fn utf8_to_compound_text(text: &str) -> Result<Vec<u8>, ()> {
-    init();
-
-    let mut len = 0;
-
-    unsafe {
-        let ptr: *mut c_char = crate::ffi::xcb_utf8_to_compound_text(
-            text.as_ptr() as *const _,
-            text.len() as _,
-            &mut len,
-        );
-
-        if ptr.is_null() {
-            Err(())
-        } else {
-            let slice = std::slice::from_raw_parts_mut(ptr as *mut u8, len as usize);
-            let out = slice.to_vec();
-            let _ = slice;
-            libc::free(ptr as *mut _);
-
-            Ok(out)
-        }
+pub fn compound_text_to_utf8(bytes: &[u8]) -> Result<&str, ()> {
+    if bytes.starts_with(UTF8_START) && bytes.ends_with(UTF8_END) {
+        std::str::from_utf8(&bytes[3..bytes.len() - 3]).map_err(|_| ())
+    } else {
+        Err(())
     }
-}
-
-pub fn compound_text_to_utf8(bytes: &[u8]) -> Result<String, ()> {
-    init();
-
-    let mut len = 0;
-
-    unsafe {
-        let ptr: *mut c_char = crate::ffi::xcb_compound_text_to_utf8(
-            bytes.as_ptr() as *const _,
-            bytes.len() as _,
-            &mut len,
-        );
-
-        if ptr.is_null() {
-            Err(())
-        } else {
-            let slice = std::slice::from_raw_parts_mut(ptr as *mut u8, len as usize);
-            let out = slice.to_vec();
-            let _ = slice;
-            libc::free(ptr as *mut _);
-
-            String::from_utf8(out).map_err(|_| ())
-        }
-    }
-}
-
-mod ffi {
-    #![allow(non_upper_case_globals)]
-    #![allow(non_camel_case_types)]
-    #![allow(non_snake_case)]
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
 #[cfg(test)]
@@ -74,7 +27,7 @@ mod tests {
         const COMP: &[u8] = &[
             27, 37, 71, 234, 176, 128, 235, 130, 152, 235, 139, 164, 27, 37, 64,
         ];
-        assert_eq!(crate::utf8_to_compound_text(UTF8).unwrap(), COMP);
+        assert_eq!(crate::utf8_to_compound_text(UTF8), COMP);
         assert_eq!(crate::compound_text_to_utf8(COMP).unwrap(), UTF8);
     }
 }
