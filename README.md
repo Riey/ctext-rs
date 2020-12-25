@@ -1,3 +1,5 @@
 # ctext
 
-This library is wrapper for xcb-imdkit with dynamic linkage
+Currently only support utf8 mode
+
+License: MIT

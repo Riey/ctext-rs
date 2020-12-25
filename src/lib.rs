@@ -45,6 +45,7 @@ impl<'s> CText<'s> {
     }
 }
 
+/// Encoding utf8 to COMPOUND_TEXT with utf8 escape
 pub fn utf8_to_compound_text(text: &str) -> Vec<u8> {
     let mut ret = Vec::with_capacity(text.len() + 6);
     ret.extend_from_slice(UTF8_START);
@@ -53,6 +54,7 @@ pub fn utf8_to_compound_text(text: &str) -> Vec<u8> {
     ret
 }
 
+/// Decoding COMPOUND_TEXT to utf8 only works with utf8 escaped text
 pub fn compound_text_to_utf8(bytes: &[u8]) -> Result<&str, ()> {
     if bytes.starts_with(UTF8_START) && bytes.ends_with(UTF8_END) {
         std::str::from_utf8(&bytes[3..bytes.len() - 3]).map_err(|_| ())
